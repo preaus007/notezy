@@ -4,11 +4,11 @@ import { Link, useNavigate, useParams } from "react-router";
 import api from "../libs/axios";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, LoaderIcon, Trash2Icon } from "lucide-react";
-import { formatDate } from "../libs/utils";
 
-const NoteDetailPage = () => {
+const NoteUpdatePage = () => {
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const navigate = useNavigate();
 
@@ -45,6 +45,26 @@ const NoteDetailPage = () => {
     }
   };
 
+  const handleSave = async () => {
+    if (!note.title.trim() || !note.content.trim()) {
+      toast.error("Please add a title or content");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      await api.put(`/notes/${id}`, note);
+      toast.success("Note updated successfully");
+      navigate("/");
+    } catch (error) {
+      console.log("Error saving the note:", error);
+      toast.error("Failed to update note");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-base-200 flex items-center justify-center">
@@ -73,19 +93,41 @@ const NoteDetailPage = () => {
 
           <div className="card bg-base-100">
             <div className="card-body">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-semibold text-white mb-2">
-                  {note.title}
-                </h1>
-                <span className="text-sm text-amber-500">
-                  {formatDate(new Date(note.createdAt))}
-                </span>
+              <div className="form-control mb-4 flex flex-col gap-4">
+                <label className="label">
+                  <span className="label-text">Title</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Note title"
+                  className="input input-bordered w-full rounded-lg"
+                  value={note.title}
+                  onChange={(e) => setNote({ ...note, title: e.target.value })}
+                />
               </div>
 
-              <div className="border-b border-gray-300 my-4"></div>
+              <div className="form-control mb-4 flex flex-col gap-4">
+                <label className="label">
+                  <span className="label-text">Content</span>
+                </label>
+                <textarea
+                  placeholder="Write your note here..."
+                  className="textarea textarea-bordered h-32 w-full rounded-lg"
+                  value={note.content}
+                  onChange={(e) =>
+                    setNote({ ...note, content: e.target.value })
+                  }
+                />
+              </div>
 
-              <div className="text-white leading-relaxed text-lg">
-                <p>{note.content}</p>
+              <div className="card-actions justify-end">
+                <button
+                  className="btn btn-primary"
+                  disabled={saving}
+                  onClick={handleSave}
+                >
+                  {saving ? "Saving..." : "Save Changes"}
+                </button>
               </div>
             </div>
           </div>
@@ -94,4 +136,4 @@ const NoteDetailPage = () => {
     </div>
   );
 };
-export default NoteDetailPage;
+export default NoteUpdatePage;
